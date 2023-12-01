@@ -70,7 +70,23 @@ class MyDatabaseHelper(private val context: Context) : SQLiteOpenHelper(context,
                 "$COLUMN_NAME_RATING_DESC TEXT)"
                 "$COLUMN_NAME_RESPIRATORY_RATE REAL)"
         db?.execSQL(createTableQuery)
-
+        
+        val workoutSuggestions = "CREATE TABLE $TABLE_NAME_WORKOUT_SUGGESTIONS (" +
+        val createTableQueryForUserDetails = "CREATE TABLE $USER_TABLE_NAME (" +
+                "$COLUMN_NAME_SUGGESTION_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "$COLUMN_NAME_SESSION_ID TEXT," +
+                "$COLUMN_NAME_USER_ID TEXT PRIMARY KEY, " +
+                "$COLUMN_NAME_DATE TEXT," +
+                "$COLUMN_NAME_EXERCISE_ID INTEGER," +
+                "$COLUMN_NAME_SCORE REAL," +
+                "$COLUMN_NAME_AGE REAL," +
+                "$COLUMN_NAME_IS_PERFORMED INTEGER," +
+                "$COLUMN_NAME_USERNAME TEXT)"
+                "FOREIGN KEY($COLUMN_NAME_EXERCISE_ID) REFERENCES $TABLE_NAME_WORKOUTS_INFORMATION($COLUMN_NAME_WORKOUT_ID))"
+        db?.execSQL(workoutsInformation)
+        insertDataFromCsvIfNotLoaded(db, WORKOUTS_INFORMATION_FILENAME)
+        db?.execSQL(workoutSuggestions)
+        
         val createTableQuery = "CREATE TABLE $TABLE_NAME_USER_VITALS (" +
                 "$COLUMN_NAME_VITALS_ID TEXT PRIMARY KEY, " +
                 "$COLUMN_NAME_HEIGHT REAL," +
@@ -91,7 +107,7 @@ class MyDatabaseHelper(private val context: Context) : SQLiteOpenHelper(context,
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME_USER_VITALS")
         db?.execSQL("DROP TABLE IF EXISTS $USER_TABLE_NAME")
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME_WORKOUTS_INFORMATION")
-
+        db?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME_WORKOUT_SUGGESTIONS")
         onCreate(db)
     }
 
