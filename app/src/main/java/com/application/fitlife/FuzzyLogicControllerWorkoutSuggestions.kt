@@ -14,10 +14,10 @@ class FuzzyLogicControllerWorkoutSuggestions {
 
     companion object {
 
-        private const val USER_HEIGHT = "height"
-        private const val USER_WEIGHT = "weight"
-        private const val USER_HEART_RATE = "heartRate"
-        private const val USER_RESPIRATORY_RATE = "respiratoryRate"
+        const val USER_HEIGHT = "height"
+        const val USER_WEIGHT = "weight"
+        const val USER_HEART_RATE = "heartRate"
+        const val USER_RESPIRATORY_RATE = "respiratoryRate"
 
         // Format a Date object to a String using the specified pattern
         fun suggestWorkouts(db: SQLiteDatabase, muscleGroups: List<String>, workoutTypes: List<String>, userMetrics: Map<String, String>, sessionId: String): List<Long> {
