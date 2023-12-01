@@ -142,8 +142,8 @@ class GraphsAndAnalyticsActivity : AppCompatActivity() {
             var day = 1
             do {
                 // You can retrieve data from the cursor using column indices or column names
-                val vitalsIDIndex = cursor.getColumnIndex("vitals_id")
-                val dateValue = cursor.getString(vitalsIDIndex)
+                val dateIDIndex = cursor.getColumnIndex("date")
+                val dateValue = cursor.getString(dateIDIndex)
 
                 val scoreIndex = cursor.getColumnIndex("score")
                 val scoreValue = cursor.getDouble(scoreIndex)
