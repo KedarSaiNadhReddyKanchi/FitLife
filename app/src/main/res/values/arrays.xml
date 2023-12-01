@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="muscle_groups">
+        <item>Arms</item>
+        <item>Chest</item>
+        <item>Back</item>
+        <item>Legs</item>
+        <item>Shoulders</item>
+        <!-- Add more muscle groups as needed -->
+    </string-array>
+
+    <string-array name="exercise_types">
+        <item>Strength</item>
+        <item>Plyometrics</item>
+        <item>Stretching</item>
+        <item>Powerlifting</item>
+        <item>Strongman</item>
+    </string-array>
+</resources>
