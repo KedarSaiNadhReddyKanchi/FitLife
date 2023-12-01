@@ -35,6 +35,13 @@ class FuzzyLogicControllerWorkoutSuggestions {
                     USER_RESPIRATORY_RATE, "0"
                 ).toDouble(), 12.0, 20.0
             )
+
+            val bmiWeight = 0.4
+            val heartRateWeight = 0.3
+            val respiratoryRateWeight = 0.3
+
+            val overallRating = (bmiRating * bmiWeight + heartRateRating * heartRateWeight + respiratoryRateRating * respiratoryRateWeight)
+
         }
 
         /**Underweight = <18.5
