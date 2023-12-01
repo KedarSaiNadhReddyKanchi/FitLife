@@ -4,6 +4,7 @@ import kotlin.math.abs
 import com.application.fitlife.data.MyDatabaseHelper
 import com.application.fitlife.data.WorkoutSuggestion
 import android.database.sqlite.SQLiteDatabase
+
 class ScoringEngine {
     companion object{
 
@@ -11,6 +12,38 @@ class ScoringEngine {
         const val USER_WEIGHT = "weight"
         const val USER_HEART_RATE = "heartRate"
         const val USER_RESPIRATORY_RATE = "respiratoryRate"
+
+        fun calculateScore(db: SQLiteDatabase, userMetrics: Map<String, String>): Double{
+            var userBMI = 23.5
+            if (userMetrics.containsKey(ScoringEngine.USER_HEIGHT) && userMetrics.containsKey(
+                    ScoringEngine.USER_WEIGHT
+                )) {
+                userBMI = ScoringEngine.calculateBMI(
+                    userMetrics.getOrDefault(
+                        ScoringEngine.USER_HEIGHT,
+                        "0"
+                    ).toDouble(), userMetrics.getOrDefault(
+                        ScoringEngine.USER_WEIGHT, "0"
+                    ).toDouble()
+                )
+            }
+            val bmiRating =
+                ScoringEngine.calculateBMIRating(userBMI, 18.5, 29.9)
+            val heartRateRating = ScoringEngine.calculateHeartRateRating(
+                userMetrics.getOrDefault(
+                    ScoringEngine.USER_HEART_RATE,
+                    "0"
+                ).toDouble(), 60.0, 100.0
+            )
+            val respiratoryRateRating =
+                ScoringEngine.calculateRespiratoryRateRating(
+                    userMetrics.getOrDefault(
+                        ScoringEngine.USER_RESPIRATORY_RATE, "0"
+                    ).toDouble(), 12.0, 20.0
+                )
+
+            return 0.0
+        }
 
         private fun getPerformedExercisesByDate(db: SQLiteDatabase, targetDate: String): List<WorkoutSuggestion> {
             val query = """
