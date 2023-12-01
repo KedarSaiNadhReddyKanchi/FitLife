@@ -4,6 +4,8 @@ import kotlin.math.abs
 import com.application.fitlife.data.MyDatabaseHelper
 import com.application.fitlife.data.WorkoutSuggestion
 import android.database.sqlite.SQLiteDatabase
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class ScoringEngine {
     companion object{
@@ -41,7 +43,25 @@ class ScoringEngine {
                         ScoringEngine.USER_RESPIRATORY_RATE, "0"
                     ).toDouble(), 12.0, 20.0
                 )
+            val bmiWeight = 0.2
+            val heartRateWeight = 0.4
+            val respiratoryRateWeight = 0.4
 
+            val overallRating = (bmiRating * bmiWeight + heartRateRating * heartRateWeight + respiratoryRateRating * respiratoryRateWeight)
+
+            val workoutSuggestions = getPerformedExercisesByDate(db, LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+            val top10Exercise = workoutSuggestions.slice(0 until 10)
+            val averageScoreTop10 = top10Exercise
+                .map { it.score.toInt() }
+                .toList()
+                .average()
+            val totalAvg = workoutSuggestions
+                .map { it.score.toInt() }
+                .toList()
+                .average()
+
+            val restAvg = (totalAvg * workoutSuggestions.size - averageScoreTop10 * top10Exercise.size) / (workoutSuggestions.size - top10Exercise.size)
             return 0.0
         }
 
