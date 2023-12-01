@@ -62,7 +62,11 @@ class ScoringEngine {
                 .average()
 
             val restAvg = (totalAvg * workoutSuggestions.size - averageScoreTop10 * top10Exercise.size) / (workoutSuggestions.size - top10Exercise.size)
-            return 0.0
+            val overallScoring = averageScoreTop10 + (overallRating * restAvg / 100)
+
+            println("overallScoring: ${overallScoring} overallRating: ${overallRating} averageScoreTop10: ${averageScoreTop10}")
+
+            return overallScoring.coerceIn(1.0, 100.0)
         }
 
         private fun getPerformedExercisesByDate(db: SQLiteDatabase, targetDate: String): List<WorkoutSuggestion> {
