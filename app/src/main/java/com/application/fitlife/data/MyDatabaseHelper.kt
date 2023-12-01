@@ -110,6 +110,40 @@ class MyDatabaseHelper(private val context: Context) : SQLiteOpenHelper(context,
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME_WORKOUT_SUGGESTIONS")
         onCreate(db)
     }
-
+    
+    fun readCsvFile(fileName: String): List<Array<String>> {
+        context.assets.open(fileName).use { inputStream ->
+            InputStreamReader(inputStream).use { inputStreamReader ->
+                return CSVReaderBuilder(inputStreamReader)
+                    .withSkipLines(1)
+                    .build()
+                    .readAll()
+            }
+        }
+    }
+    
+    fun insertDataFromCsvIfNotLoaded(db: SQLiteDatabase?, fileName: String) {
+        val preferences = AppPreferences(context)
+        println("Loading workout data to app")
+        if (!preferences.isDataLoaded()) {
+            val csvData = readCsvFile(fileName)
+            for (row in csvData) {
+                val values = ContentValues().apply {
+                    put(COLUMN_NAME_WORKOUT_ID, row[0])
+                    put(COLUMN_NAME_TITLE, row[1])
+                    put(COLUMN_NAME_DESCRIPTION, row[2])
+                    put(COLUMN_NAME_TYPE, row[3])
+                    put(COLUMN_NAME_BODYPART, row[4])
+                    put(COLUMN_NAME_EQUIPMENT, row[5])
+                    put(COLUMN_NAME_LEVEL, row[6])
+                    put(COLUMN_NAME_RATING, row[7])
+                    put(COLUMN_NAME_RATING_DESC, row[8])
+                }
+                db?.insert(TABLE_NAME_WORKOUTS_INFORMATION, null, values)
+            }
+            // Mark data as loaded
+            preferences.setDataLoaded(true)
+        }
+    }
 
 }
