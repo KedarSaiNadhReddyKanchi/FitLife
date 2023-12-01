@@ -1,12 +1,10 @@
-package com.application.fitlife
+package com.application.bhealthy
 
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.Spinner
@@ -15,10 +13,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.application.fitlife.FuzzyLogicControllerWorkoutSuggestions.Companion.suggestWorkouts
-import com.application.fitlife.data.MyDatabaseHelper
+import com.application.bhealthy.FuzzyLogicControllerWorkoutSuggestions.Companion.suggestWorkouts
+import com.application.bhealthy.data.MyDatabaseHelper
+import com.application.bhealthy.data.Workout
 
-class ShowExercise : AppCompatActivity() {
+class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
     companion object {
         const val USER_HEIGHT = "height"
         const val USER_WEIGHT = "weight"
@@ -71,9 +70,11 @@ class ShowExercise : AppCompatActivity() {
             val muscleGroupSelections = muscleGroups.filterIndexed { index, _ ->
                 selectedMuscleGroups?.get(index) == true
             }
+            Toast.makeText(this, "Selected Exercises: $muscleGroupSelections", Toast.LENGTH_LONG).show()
             val exerciseTypeSelections = exerciseTypes.filterIndexed { index, _ ->
                 selectedExerciseTypes?.get(index) == true
             }
+            Toast.makeText(this, "Selected Exercises: $exerciseTypeSelections", Toast.LENGTH_LONG).show()
             val userMetrics = mapOf(
                 USER_HEIGHT to "180",  // Replace with actual user height
                 USER_WEIGHT to "75",   // Replace with actual user weight
@@ -90,12 +91,16 @@ class ShowExercise : AppCompatActivity() {
                 userMetrics,
                 sessionId
             )
+
+            val workouts = getWorkoutsByIds(db, suggestedWorkoutIds)
+
+            Toast.makeText(this, "$suggestedWorkoutIds.size()", Toast.LENGTH_LONG).show();
             // Do something with the suggestedWorkoutIds, like displaying them
 //            FuzzyLogicControllerWorkoutSuggestions.showSelectedExercises()
         }
 
         submitButton.setOnClickListener {
-//            showSelectedExercises()
+          showSelectedExercises()
 
             // Added code
 
@@ -104,6 +109,38 @@ class ShowExercise : AppCompatActivity() {
         exercisesAdapter = ExercisesAdapter(emptyList())
         exercisesList.layoutManager = LinearLayoutManager(this)
         exercisesList.adapter = exercisesAdapter
+    }
+
+    fun getWorkoutsByIds(db: android.database.sqlite.SQLiteDatabase, ids: List<Long>): List<Workout> {
+        val workouts = mutableListOf<Workout>()
+        // Convert the List<Long> of workout IDs to a comma-separated string for the SQL query
+        val workoutIdList = ids.joinToString(separator = ", ")
+
+        // SQL query to retrieve exercises
+        val query = """
+        SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_WORKOUTS_INFORMATION}
+        WHERE ${MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID} IN ($workoutIdList)
+    """.trimIndent()
+
+        // Execute the query and iterate over the result set
+//        val cursor = db.rawQuery(query, null)
+//        while (cursor.moveToNext()) {
+//            val id = cursor.getLong(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID))
+//            val title = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_TITLE))
+//            val description = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_DESCRIPTION))
+//            val type = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_TYPE))
+//            val bodyPart = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_BODYPART))
+//            val equipment = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_EQUIPMENT))
+//            val level = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_LEVEL))
+//            val rating = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_RATING))
+//            val ratingDesc = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_RATING_DESC))
+//
+//            // Create a Workout object from the row and add it to the list
+//            workouts.add(Workout(id, title, description, type, bodyPart, equipment, level, rating, ratingDesc))
+//        }
+//        cursor.close() // Don't forget to close the cursor
+
+        return workouts
     }
 
     private fun showExerciseTypeDialog() {
