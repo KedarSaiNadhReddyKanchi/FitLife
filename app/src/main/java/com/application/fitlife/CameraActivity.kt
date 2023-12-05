@@ -1,5 +1,7 @@
-package com.application.bhealthy
+package com.application.fitlife
 
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues
@@ -11,14 +13,12 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Build
-import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -35,14 +35,11 @@ class CameraActivity : AppCompatActivity() {
 
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
-
     private lateinit var cameraExecutor: ExecutorService
-
     private lateinit var captureVideo: Button
     private lateinit var intentToReturn: Intent
     private lateinit var hiddenButton: Button
     private var readyToReturn = false
-
     private val handler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +54,6 @@ class CameraActivity : AppCompatActivity() {
         }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
-
         captureVideo = findViewById<Button>(R.id.video_capture_button)
         captureVideo.setOnClickListener {
             handler.postDelayed({
@@ -65,7 +61,6 @@ class CameraActivity : AppCompatActivity() {
             }, 45000) // Stop recording after 10 seconds (10000 milliseconds)
             captureVideo()
         }
-
         hiddenButton = findViewById<Button>(R.id.hiddenButton)
         hiddenButton.setOnClickListener {
             if (readyToReturn) {
@@ -74,7 +69,6 @@ class CameraActivity : AppCompatActivity() {
                 finish()
             }
         }
-
     }
 
     override fun onDestroy() {

@@ -1,14 +1,14 @@
 package com.application.fitlife
 
 import android.content.ContentValues
-import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import com.application.bhealthy.data.MyDatabaseHelper
-import com.application.bhealthy.data.Workout
+import com.application.fitlife.data.Workout
+import com.application.fitlife.data.MyDatabaseHelper
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.random.Random
 
 class FuzzyLogicControllerWorkoutSuggestions {
 
@@ -25,26 +25,57 @@ class FuzzyLogicControllerWorkoutSuggestions {
             // Calculate user BMI
             var userBMI = 23.5
             if (userMetrics.containsKey(USER_HEIGHT) && userMetrics.containsKey(USER_WEIGHT)) {
-                userBMI = calculateBMI(userMetrics.getOrDefault(USER_HEIGHT, "0").toDouble(), userMetrics.getOrDefault(
-                    USER_WEIGHT, "0").toDouble())
+                userBMI = calculateBMI(
+                    userMetrics.getOrDefault(USER_HEIGHT, "0").toDouble(), userMetrics.getOrDefault(
+                        USER_WEIGHT, "0"
+                    ).toDouble()
+                )
             }
             val bmiRating = calculateBMIRating(userBMI, 18.5, 29.9)
-            val heartRateRating = calculateHeartRateRating(userMetrics.getOrDefault(USER_HEART_RATE, "0").toDouble(), 60.0, 100.0)
-            val respiratoryRateRating = calculateRespiratoryRateRating(userMetrics.getOrDefault(
-                USER_RESPIRATORY_RATE, "0").toDouble(), 12.0, 20.0)
+            val heartRateRating = calculateHeartRateRating(
+                userMetrics.getOrDefault(USER_HEART_RATE, "0").toDouble(),
+                60.0,
+                100.0
+            )
+            val respiratoryRateRating = calculateRespiratoryRateRating(
+                userMetrics.getOrDefault(
+                    USER_RESPIRATORY_RATE, "0"
+                ).toDouble(), 12.0, 20.0
+            )
 
             val bmiWeight = 0.4
             val heartRateWeight = 0.3
             val respiratoryRateWeight = 0.3
 
             val overallRating = (bmiRating * bmiWeight + heartRateRating * heartRateWeight + respiratoryRateRating * respiratoryRateWeight)
-            println("overall rating of user : $overallRating")
             val selectedWorkouts: List<Workout> = getWorkoutsByFiltersAndRating(db, muscleGroups, workoutTypes, overallRating)
-            println("selected workouts : $selectedWorkouts")
             for (workout in selectedWorkouts) {
                 println("Workout ID: ${workout.id} Title: ${workout.title} ${workout.description}")
             }
             return insertWorkoutSuggestions(db, sessionId, selectedWorkouts)
+        }
+
+        private fun insertWorkoutSuggestions(db: SQLiteDatabase, sessionId: String, selectedWorkouts: List<Workout>): List<Long> {
+            val contentValues = ContentValues()
+            contentValues.put(MyDatabaseHelper.COLUMN_NAME_SESSION_ID, sessionId)
+            contentValues.put(MyDatabaseHelper.COLUMN_NAME_DATE, LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+
+            val insertedSuggestionIds = mutableListOf<Long>()
+
+            for (workout in selectedWorkouts) {
+                contentValues.put(MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID, workout.id)
+//                contentValues.put(MyDatabaseHelper.COLUMN_NAME_SCORE, 0.0)  // You may adjust the default score
+                contentValues.put(MyDatabaseHelper.COLUMN_NAME_SCORE, Random.nextInt(101))
+                contentValues.put(MyDatabaseHelper.COLUMN_NAME_IS_PERFORMED, 0)  // Assuming 0 for not performed
+
+                val suggestionId = db.insert(MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS, null, contentValues)
+                if (suggestionId != -1L) {
+                    insertedSuggestionIds.add(suggestionId)
+                }
+            }
+
+            return insertedSuggestionIds
         }
 
         private fun getWorkoutsByFiltersAndRating(db: SQLiteDatabase, bodyParts: List<String>, types: List<String>, targetRating: Double): List<Workout> {
@@ -106,28 +137,6 @@ class FuzzyLogicControllerWorkoutSuggestions {
             return selectedWorkouts
         }
 
-        private fun insertWorkoutSuggestions(db: SQLiteDatabase, sessionId: String, selectedWorkouts: List<Workout>): List<Long> {
-            val contentValues = ContentValues()
-            contentValues.put(MyDatabaseHelper.COLUMN_NAME_SESSION_ID, sessionId)
-            contentValues.put(MyDatabaseHelper.COLUMN_NAME_DATE, LocalDate.now().format(
-                DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-
-            val insertedSuggestionIds = mutableListOf<Long>()
-
-            for (workout in selectedWorkouts) {
-                contentValues.put(MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID, workout.id)
-                contentValues.put(MyDatabaseHelper.COLUMN_NAME_SCORE, 0.0)  // You may adjust the default score
-                contentValues.put(MyDatabaseHelper.COLUMN_NAME_IS_PERFORMED, 0)  // Assuming 0 for not performed
-
-                val suggestionId = db.insert(MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS, null, contentValues)
-                if (suggestionId != -1L) {
-                    insertedSuggestionIds.add(suggestionId)
-                }
-            }
-
-            return insertedSuggestionIds
-        }
-
         /**Underweight = <18.5
         Normal weight = 18.5–24.9
         Overweight = 25–29.9
@@ -156,6 +165,7 @@ class FuzzyLogicControllerWorkoutSuggestions {
             val rating = 10.0 - 9.0 * (abs(value - peakValue) * 1.5 / (upperBound - lowerBound))
             return rating.coerceIn(1.0, 10.0)
         }
+
     }
 
 }

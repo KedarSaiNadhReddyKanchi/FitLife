@@ -1,5 +1,7 @@
 package com.application.fitlife
 
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
@@ -14,36 +16,46 @@ import android.hardware.SensorManager
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.AsyncTask
-import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-
 import com.application.fitlife.data.MyDatabaseHelper
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.pow
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class MainActivity : AppCompatActivity() {
 
-    val CAMERA_ACTIVITY_REQUEST_CODE = 1 // Define a request code (any integer)
+    // defining the UI elements
+    private lateinit var heartRateText: TextView
+    private lateinit var userAge: EditText
+    private lateinit var userWeight: EditText
+    private lateinit var userHeight: EditText
+
+    // maintaining a unique ID to acts a primary key reference for the database table.
+    // for this project we are using the current date as the primary key as we are interested in only maintaining one row per day.
+    // so any new data coming into the table for the current date which is already present in the table, then the code logic would only update the table instead of inserting a new row.
     private val uniqueIdKey = "unique_id"
     private lateinit var sharedPreferences: SharedPreferences
 
+    // camera implementation pre requisites
+    val CAMERA_ACTIVITY_REQUEST_CODE = 1 // Define a request code (any integer)
+    private val eventHandler = Handler()
+
+    // respiratory rate accelerometer pre-requisites
     private val dataCollectionIntervalMillis = 100 // Sampling interval in milliseconds
     private val accelValuesX = ArrayList<Float>()
     private val accelValuesY = ArrayList<Float>()
     private val accelValuesZ = ArrayList<Float>()
-
     private var isMeasuringRespiratoryRate = false
-    private val eventHandler = Handler()
     private val measurementDuration = 45000L // 45 seconds
-
-    private lateinit var heartRateText: TextView
 
     private val slowTask = SlowTask()
 
@@ -51,9 +63,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // sharedPreferences is something similar to the localStorage and sessionStorage we get in JavaScript
         sharedPreferences = getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE)
 
-        // Check if the unique ID exists in SharedPreferences
+        // generating a new unique ID
         val uniqueId = generateUniqueId()
 
         // Store the unique ID in SharedPreferences
@@ -61,17 +74,29 @@ class MainActivity : AppCompatActivity() {
         editor.putString(uniqueIdKey, uniqueId)
         editor.apply()
 
-        //findViewById<TextView>(R.id.sessionId).text = uniqueId
-
+        // accessing the heart Rate UI element and setting the TextView to be disabled so that the user cannot edit it.
         heartRateText = findViewById<TextView>(R.id.heartRateText)
         heartRateText.text = "0"
+        heartRateText.isEnabled = false
 
-        val recentAnalyticsButton = findViewById<Button>(R.id.recentAnalytics)
-        recentAnalyticsButton.setOnClickListener {
-            val intent = Intent(this@MainActivity, GraphsAndAnalyticsActivity::class.java)
-            intent.putExtra("unique_id", uniqueId)
-            startActivity(intent)
-        }
+        // accessing the respiratory Rate UI element and setting the TextView to be disabled so that the user cannot edit it.
+        val respiratoryRateText = findViewById<TextView>(R.id.respiratoryRateText)
+        respiratoryRateText.isEnabled = false
+
+        // accessing the user age, weight and height metric fields.
+        userAge = findViewById(R.id.editTextAge)
+        userHeight = findViewById(R.id.editTextHeight)
+        userWeight = findViewById(R.id.editTextWeight)
+
+        val userAgeValue = userAge.text.toString()
+        val userHeightValue = userHeight.text.toString()
+        val userWeightValue = userWeight.text.toString()
+
+        // making sure that the text view components that is:  app title and the tag line for the app title are disabled so that the user cannot edit it.
+        val tagLinePartViewTwo: TextView = findViewById(R.id.tagLinePart2)
+        tagLinePartViewTwo.isEnabled = false
+        val appTitleView: TextView = findViewById(R.id.appTitle)
+        appTitleView.isEnabled = false
 
         // Measure heart rate button
         val measureHeartRateButton = findViewById<Button>(R.id.heartRate)
@@ -102,7 +127,7 @@ class MainActivity : AppCompatActivity() {
                 // Handle accuracy changes if needed
             }
         }
-        val respiratoryRateText = findViewById<TextView>(R.id.respiratoryRateText)
+
         val measureRespiratoryRate = findViewById<Button>(R.id.respiratoryRate)
         measureRespiratoryRate.setOnClickListener {
             Toast.makeText(baseContext, "Started measuring respiratory rate", Toast.LENGTH_SHORT).show()
@@ -123,43 +148,76 @@ class MainActivity : AppCompatActivity() {
         }
 
         val dbHelper = MyDatabaseHelper(this)
+        val recordExerciseButton = findViewById<Button>(R.id.recordMetrics)
+        recordExerciseButton.setOnClickListener {
+            insertOrUpdateDatabaseEntry(dbHelper, uniqueId, heartRateText.text.toString(), respiratoryRateText.text.toString(), userAgeValue, userWeightValue, userHeightValue)
+            Toast.makeText(baseContext, "Uploaded Metrics to database", Toast.LENGTH_SHORT).show()
+        }
 
-        // upload signs button
-        val startExerciseButton = findViewById<Button>(R.id.startExercise)
-        startExerciseButton.setOnClickListener {
-            val intent = Intent(this@MainActivity, ShowExercise::class.java)
+        val recentAnalyticsButton = findViewById<Button>(R.id.recentAnalytics)
+        recentAnalyticsButton.setOnClickListener {
+            val intent = Intent(this@MainActivity, GraphsAndAnalyticsActivity::class.java)
             intent.putExtra("unique_id", uniqueId)
             startActivity(intent)
         }
 
     }
 
-//    fun insertOrUpdateDatabaseEntry(dbHelper: MyDatabaseHelper, vitalsId: String, heartRate: String, respiratoryRate: String) {
-//        val db = dbHelper.writableDatabase
-//
-//        // Check if the entry with the given vitals_id exists
-//        val cursor = db.rawQuery("SELECT * FROM ${MyDatabaseHelper.TABLE_NAME} WHERE ${MyDatabaseHelper.COLUMN_NAME_VITALS_ID}=?", arrayOf(vitalsId))
-//        val values = ContentValues()
-//        values.put("heart_rate", heartRate.toFloatOrNull() ?: 0.0f)
-//        values.put("respiratory_rate", respiratoryRate.toFloatOrNull() ?: 0.0f)
-//
-//        if (cursor.count > 0) {
-//            // Entry with the vitals_id already exists, update it
-//            db.update(
-//                MyDatabaseHelper.TABLE_NAME,
-//                values,
-//                "${MyDatabaseHelper.COLUMN_NAME_VITALS_ID}=?",
-//                arrayOf(vitalsId)
-//            )
-//        } else {
-//            values.put("vitals_id", vitalsId)
-//            // Entry with the vitals_id doesn't exist, insert a new record
-//            db.insert(MyDatabaseHelper.TABLE_NAME, null, values)
-//        }
-//
-//        cursor.close()
-//        db.close()
-//    }
+    fun insertOrUpdateDatabaseEntry(dbHelper: MyDatabaseHelper, uniqueDate: String, heart_rate: String, respiratory_rate: String, age: String, weight: String, height: String) {
+        val db = dbHelper.writableDatabase
+
+        // Check if the entry with the given vitals_id exists
+        Log.d("uniqueDate", uniqueDate)
+        val cursor = db.rawQuery("SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE}=?", arrayOf(uniqueDate))
+        val values = ContentValues()
+
+        if (heart_rate == "") {
+            values.put("heart_rate", "0")
+        } else {
+            values.put("heart_rate", heart_rate)
+        }
+        if (respiratory_rate == "") {
+            values.put("respiratory_rate", "0")
+        } else {
+            values.put("respiratory_rate", respiratory_rate)
+        }
+        if (weight == "") {
+            values.put("weight", "90")
+        } else {
+            values.put("weight", height)
+        }
+        if (height == "") {
+            values.put("height", "170")
+        } else {
+            values.put("height", height)
+        }
+
+//        values.put("heart_rate", heart_rate.toFloatOrNull() ?: 0.0f)
+//        values.put("respiratory_rate", respiratory_rate.toFloatOrNull() ?: 0.0f)
+//        values.put("weight", weight.toFloatOrNull() ?: 0.0f)
+//        values.put("height", height.toFloatOrNull() ?: 0.0f)
+
+        Log.d("insertOrUpdateDatabaseEntry", "Primary Key Date = $uniqueDate heart_rate: $heart_rate, respiratory_rate: $respiratory_rate, weight: $weight, height: $height")
+
+        if (cursor.count > 0) {
+            // Entry with the vitals_id already exists, update it
+            db.update(
+                MyDatabaseHelper.TABLE_NAME_USER_METRICS,
+                values,
+                "${MyDatabaseHelper.COLUMN_NAME_DATE}=?",
+                arrayOf(uniqueDate)
+            )
+            Toast.makeText(baseContext, "Entry with today's date already exists therefore the corresponding row has been updated", Toast.LENGTH_LONG).show()
+        } else {
+            values.put("date", uniqueDate)
+            // Entry with the vitals_id doesn't exist, insert a new record
+            db.insert(MyDatabaseHelper.TABLE_NAME_USER_METRICS, null, values)
+            Toast.makeText(baseContext, "Entry with today's date doesn't exist therefore inserted a new record", Toast.LENGTH_LONG).show()
+        }
+
+        cursor.close()
+        db.close()
+    }
 
     fun generateUniqueId(): String {
         // Get current timestamp in milliseconds
@@ -168,8 +226,12 @@ class MainActivity : AppCompatActivity() {
         // Generate a random UUID
         val randomUUID = UUID.randomUUID()
 
-        // Combine the timestamp and randomUUID to create a unique ID
-        return "$timestamp-${randomUUID.toString()}"
+        val currentDate = LocalDate.now(ZoneId.systemDefault())
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        var formattedDate = currentDate.format(formatter)
+        formattedDate = formattedDate.toString()
+
+        return formattedDate
     }
 
     private fun calculateRespiratoryRate():Int {
@@ -280,7 +342,6 @@ class MainActivity : AppCompatActivity() {
                 return (rate/2).toString()
             }
         }
-
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             if (result != null) {
@@ -289,5 +350,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
 }
