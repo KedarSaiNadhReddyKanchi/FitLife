@@ -90,6 +90,7 @@ class MainActivity : AppCompatActivity() {
         val userAgeValue = userAge.text.toString()
         val userHeightValue = userHeight.text.toString()
         val userWeightValue = userWeight.text.toString()
+        Log.d("userMetricValues", "age = $userAgeValue ; height = $userHeightValue ; weight = $userWeightValue");
 
         // making sure that the text view components that is:  app title and the tag line for the app title are disabled so that the user cannot edit it.
         val tagLinePartViewTwo: TextView = findViewById(R.id.tagLinePart2)
@@ -147,9 +148,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         val dbHelper = MyDatabaseHelper(this)
-        val recordExerciseButton = findViewById<Button>(R.id.recordMetrics)
-        recordExerciseButton.setOnClickListener {
-            insertOrUpdateDatabaseEntry(dbHelper, uniqueId, heartRateText.text.toString(), respiratoryRateText.text.toString(), userAgeValue, userWeightValue, userHeightValue)
+        val recordMetricsButton = findViewById<Button>(R.id.recordMetrics)
+        recordMetricsButton.setOnClickListener {
+            val userAgeValueRecordedOnButtonClick = userAge.text.toString()
+            val userHeightValueRecordedOnButtonClick = userHeight.text.toString()
+            val userWeightValueRecordedOnButtonClick = userWeight.text.toString()
+            Log.d("recordMetricsButtonuserMetricValues", "age = $userAgeValueRecordedOnButtonClick ; height = $userHeightValueRecordedOnButtonClick ; weight = $userWeightValueRecordedOnButtonClick");
+            insertOrUpdateDatabaseEntry(dbHelper, uniqueId, heartRateText.text.toString(), respiratoryRateText.text.toString(), userAgeValueRecordedOnButtonClick, userWeightValueRecordedOnButtonClick, userHeightValueRecordedOnButtonClick)
             Toast.makeText(baseContext, "Uploaded Metrics to database", Toast.LENGTH_SHORT).show()
         }
 
@@ -190,7 +195,7 @@ class MainActivity : AppCompatActivity() {
         if (weight == "") {
             values.put("weight", "90")
         } else {
-            values.put("weight", height)
+            values.put("weight", weight)
         }
         if (height == "") {
             values.put("height", "170")
