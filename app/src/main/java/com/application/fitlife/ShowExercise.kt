@@ -124,10 +124,6 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
 
         submitButton.setOnClickListener {
             updateSuggestionScore(db , sessionId)
-            //updateExerciseScore()
-            val intent = Intent(this@ShowExercise, GraphsAndAnalyticsActivity::class.java)
-//            intent.putExtra(getString(R.string.unique_id), uniqueId)
-            startActivity(intent)
 
         }
 
@@ -294,9 +290,7 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         }
 
         val dailyScoreCalculatedForUser = ScoringEngine.calculateScore(db , sessionId)
-        println("got back after calculating the user's daily score")
-        println("returned daily score from engine : ${dailyScoreCalculatedForUser}")
-
+        Toast.makeText(baseContext, "Today's workout score : $dailyScoreCalculatedForUser", Toast.LENGTH_SHORT).show()
 
         val uniqueDate = generateUniqueDate();
         val cursor = db.rawQuery("SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE}=?", arrayOf(uniqueDate))
@@ -310,12 +304,10 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
                 "${MyDatabaseHelper.COLUMN_NAME_DATE}=?",
                 arrayOf(uniqueDate)
             )
-            Toast.makeText(baseContext, "Entry with today's date already exists therefore the corresponding row has been updated", Toast.LENGTH_LONG).show()
         } else {
             values.put("date", uniqueDate)
             // Entry with the vitals_id doesn't exist, insert a new record
             db.insert(MyDatabaseHelper.TABLE_NAME_USER_METRICS, null, values)
-            Toast.makeText(baseContext, "Entry with today's date doesn't exist therefore inserted a new record", Toast.LENGTH_LONG).show()
         }
     }
 

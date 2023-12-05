@@ -219,12 +219,10 @@ class MainActivity : AppCompatActivity() {
                 "${MyDatabaseHelper.COLUMN_NAME_DATE}=?",
                 arrayOf(generatedUniqueDateFromFunction)
             )
-            Toast.makeText(baseContext, "Entry with today's date already exists therefore the corresponding row has been updated", Toast.LENGTH_LONG).show()
         } else {
             values.put("date", generatedUniqueDateFromFunction)
             // Entry with the vitals_id doesn't exist, insert a new record
             db.insert(MyDatabaseHelper.TABLE_NAME_USER_METRICS, null, values)
-            Toast.makeText(baseContext, "Entry with today's date doesn't exist therefore inserted a new record", Toast.LENGTH_LONG).show()
         }
 
         cursor.close()
