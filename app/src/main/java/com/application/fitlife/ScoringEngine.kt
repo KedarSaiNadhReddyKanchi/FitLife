@@ -4,9 +4,11 @@ import kotlin.math.abs
 import com.application.fitlife.data.MyDatabaseHelper
 import com.application.fitlife.data.WorkoutSuggestion
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 import com.application.fitlife.data.UserMetrics
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.math.min
 
 class ScoringEngine {
     companion object{
@@ -16,7 +18,7 @@ class ScoringEngine {
         const val USER_HEART_RATE = "heartRate"
         const val USER_RESPIRATORY_RATE = "respiratoryRate"
 
-        fun calculateScore(db: SQLiteDatabase): Double{
+        fun calculateScore(db: SQLiteDatabase , sessionId: String): Double{
             var userBMI = 23.5
             var userMetrics = MyDatabaseHelper.getUserMetrics(db, LocalDate.now().format(
                 DateTimeFormatter.ofPattern("yyyy-MM-dd")))
@@ -39,30 +41,37 @@ class ScoringEngine {
             val overallRating = (bmiRating * bmiWeight + heartRateRating * heartRateWeight + respiratoryRateRating * respiratoryRateWeight)
 
             val workoutSuggestions = getPerformedExercisesByDate(db, LocalDate.now().format(
-                DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-            val top10Exercise = workoutSuggestions.slice(0 until 10)
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")) , sessionId)
+            Log.d("workoutSuggestions" , workoutSuggestions.toString());
+            println("checking where it crashes - step 1 - ${workoutSuggestions.size}")
+            val top10Exercise = workoutSuggestions.slice(0 until min(10, workoutSuggestions.size))
+            println("checking where it crashes - step 2")
             val averageScoreTop10 = top10Exercise
                 .map { it.score.toInt() }
                 .toList()
                 .average()
+            println("checking where it crashes - step 3")
             val totalAvg = workoutSuggestions
                 .map { it.score.toInt() }
                 .toList()
                 .average()
-
-            val restAvg = (totalAvg * workoutSuggestions.size - averageScoreTop10 * top10Exercise.size) / (workoutSuggestions.size - top10Exercise.size)
-            val overallScoring = averageScoreTop10 + (overallRating * restAvg / 100)
-
+            println("checking where it crashes - step 4")
+            val restAvg = (totalAvg * workoutSuggestions.size - averageScoreTop10 * top10Exercise.size) / ((workoutSuggestions.size - top10Exercise.size)+1)
+            println("checking where it crashes - step 5 - restAvg = ${restAvg}")
+            val newMin = 70
+            val newMax = 100
+            val overallScoring = (newMin + (averageScoreTop10 - 0) * (newMax - newMin) / (100 - 0)) + (overallRating * restAvg / 100)
+            println("checking where it crashes - step 6")
             println("overallScoring: ${overallScoring} overallRating: ${overallRating} averageScoreTop10: ${averageScoreTop10}")
 
             return overallScoring.coerceIn(1.0, 100.0)
         }
 
-        private fun getPerformedExercisesByDate(db: SQLiteDatabase, targetDate: String): List<WorkoutSuggestion> {
+        private fun getPerformedExercisesByDate(db: SQLiteDatabase, targetDate: String , sessionId: String): List<WorkoutSuggestion> {
             val query = """
                         SELECT *
                         FROM ${MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS} 
-                        WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE} = '$targetDate'
+                        WHERE ${MyDatabaseHelper.COLUMN_NAME_SESSION_ID} = '$sessionId'
                         ORDER BY ${MyDatabaseHelper.COLUMN_NAME_SCORE} DESC
                     """.trimIndent()
 

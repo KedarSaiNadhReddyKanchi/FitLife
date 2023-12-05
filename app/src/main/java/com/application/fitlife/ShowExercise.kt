@@ -123,7 +123,7 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         }
 
         submitButton.setOnClickListener {
-            updateSuggestionScore(db)
+            updateSuggestionScore(db , sessionId)
             //updateExerciseScore()
             val intent = Intent(this@ShowExercise, GraphsAndAnalyticsActivity::class.java)
 //            intent.putExtra(getString(R.string.unique_id), uniqueId)
@@ -257,7 +257,7 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         }
     }
 
-    private fun updateSuggestionScore(db: android.database.sqlite.SQLiteDatabase) {
+    private fun updateSuggestionScore(db: android.database.sqlite.SQLiteDatabase , sessionId: String) {
         // If workouts are not yet suggested, nothing to update
         if (!::workoutAdapter.isInitialized) {
             return
@@ -292,9 +292,12 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
                 //cursor.close()
             }
         }
-        val dailyScoreCalculatedForUser = ScoringEngine.calculateScore(db)
+
+        val dailyScoreCalculatedForUser = ScoringEngine.calculateScore(db , sessionId)
         println("got back after calculating the user's daily score")
         println("returned daily score from engine : ${dailyScoreCalculatedForUser}")
+
+
         val uniqueDate = generateUniqueDate();
         val cursor = db.rawQuery("SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE}=?", arrayOf(uniqueDate))
         var values = ContentValues()
