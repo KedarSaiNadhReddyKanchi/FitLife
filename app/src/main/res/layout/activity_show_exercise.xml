@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+<!--    <Spinner-->
+<!--        android:id="@+id/muscleGroupSpinner"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="16dp" />-->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Exercises"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp"/>
+
+    <Button
+        android:id="@+id/selectMuscleGroupsButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Muscle Groups" />
+
+
+
+    <TextView
+        android:id="@+id/selectedMuscleGroupsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selected Muscle Groups: None"
+        android:padding="16dp"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/selectExerciseTypeButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Exercise Type" />
+
+
+    <TextView
+        android:id="@+id/selectedExerciseTypesText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selected Exercise Types: None"
+        android:padding="16dp"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/showExercisesButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Suggest Exercises" />
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/exercisesList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <Button
+        android:id="@+id/submitExercisesButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit" />
+
+</LinearLayout>
