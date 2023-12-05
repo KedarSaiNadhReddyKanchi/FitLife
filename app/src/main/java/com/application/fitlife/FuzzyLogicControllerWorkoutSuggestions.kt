@@ -53,8 +53,7 @@ class FuzzyLogicControllerWorkoutSuggestions {
 
             for (workout in selectedWorkouts) {
                 contentValues.put(MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID, workout.id)
-//                contentValues.put(MyDatabaseHelper.COLUMN_NAME_SCORE, 0.0)  // You may adjust the default score
-                contentValues.put(MyDatabaseHelper.COLUMN_NAME_SCORE, Random.nextInt(101))
+                contentValues.put(MyDatabaseHelper.COLUMN_NAME_SCORE, 0.0)
                 contentValues.put(MyDatabaseHelper.COLUMN_NAME_IS_PERFORMED, 0)  // Assuming 0 for not performed
 
                 val suggestionId = db.insert(MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS, null, contentValues)

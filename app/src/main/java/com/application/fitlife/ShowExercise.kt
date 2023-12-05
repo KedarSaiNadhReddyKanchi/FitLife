@@ -1,8 +1,12 @@
 package com.application.fitlife
 
 import android.app.AlertDialog
+import android.content.ContentValues
+import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -20,7 +24,9 @@ import com.application.fitlife.FuzzyLogicControllerWorkoutSuggestions.Companion.
 import com.application.fitlife.data.MyDatabaseHelper
 import com.application.fitlife.data.Workout
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
     companion object {
@@ -119,6 +125,9 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         submitButton.setOnClickListener {
             updateSuggestionScore(db)
             //updateExerciseScore()
+            val intent = Intent(this@ShowExercise, GraphsAndAnalyticsActivity::class.java)
+//            intent.putExtra(getString(R.string.unique_id), uniqueId)
+            startActivity(intent)
 
         }
 
@@ -262,16 +271,58 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         for (suggestionId in selectedExercises) {
             val selectedWorkout = workoutAdapter.workouts.find { it.id == suggestionId }
             selectedWorkout?.let {
-                val updateScoreQuery = """
-                        UPDATE ${MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS} SET 
-                        ${MyDatabaseHelper.COLUMN_NAME_SCORE} = ${selectedWorkout.score}
-                        WHERE ${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID} = ${selectedWorkout.suggestionId}
-                    """
-                val cursor = db.rawQuery(updateScoreQuery, null)
-                cursor.close()
+                println("Score cxheck ${selectedWorkout.score}")
+//                val updateScoreQuery = """
+//                        UPDATE ${MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS} SET
+//                        ${MyDatabaseHelper.COLUMN_NAME_SCORE} = ${selectedWorkout.score}
+//                        WHERE ${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID} = ${selectedWorkout.suggestionId}
+//                    """
+//                println(updateScoreQuery)
+                val dbHelper = MyDatabaseHelper(this)
+                val db = dbHelper.writableDatabase
+                var values = ContentValues()
+                values.put("score", selectedWorkout.score)
+                db.update(
+                    MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS,
+                    values,
+                    "${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID}=?",
+                    arrayOf(selectedWorkout.suggestionId.toString())
+                )
+                //val cursor = db.rawQuery(updateScoreQuery, null)
+                //cursor.close()
             }
         }
-        ScoringEngine.calculateScore(db)
+        val dailyScoreCalculatedForUser = ScoringEngine.calculateScore(db)
+        println("got back after calculating the user's daily score")
+        println("returned daily score from engine : ${dailyScoreCalculatedForUser}")
+        val uniqueDate = generateUniqueDate();
+        val cursor = db.rawQuery("SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE}=?", arrayOf(uniqueDate))
+        var values = ContentValues()
+        values.put("score", dailyScoreCalculatedForUser)
+        if (cursor.count > 0) {
+            // Entry with the vitals_id already exists, update it
+            db.update(
+                MyDatabaseHelper.TABLE_NAME_USER_METRICS,
+                values,
+                "${MyDatabaseHelper.COLUMN_NAME_DATE}=?",
+                arrayOf(uniqueDate)
+            )
+            Toast.makeText(baseContext, "Entry with today's date already exists therefore the corresponding row has been updated", Toast.LENGTH_LONG).show()
+        } else {
+            values.put("date", uniqueDate)
+            // Entry with the vitals_id doesn't exist, insert a new record
+            db.insert(MyDatabaseHelper.TABLE_NAME_USER_METRICS, null, values)
+            Toast.makeText(baseContext, "Entry with today's date doesn't exist therefore inserted a new record", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun generateUniqueDate(): String {
+        val currentDate = LocalDate.now(ZoneId.systemDefault())
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        var formattedDate = currentDate.format(formatter)
+        formattedDate = formattedDate.toString()
+
+        return formattedDate
     }
 
 //    private fun setupSpinner() {
@@ -355,6 +406,25 @@ class WorkoutCheckboxAdapter(val workouts: List<Workout>) :
             // Handle checkbox check changes if needed
             workout.isSelected = isChecked
         }
+
+        holder.percentageEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(charSequence: CharSequence?, start: Int, before: Int, count: Int) {
+                // This method is called to notify you that characters within `charSequence` are about to be replaced.
+            }
+
+            override fun onTextChanged(charSequence: CharSequence?, start: Int, before: Int, count: Int) {
+                // This method is called to notify you that somewhere within `charSequence` has been changed.
+            }
+
+            override fun afterTextChanged(editable: Editable?) {
+                // This method is called to notify you that somewhere within `editable` has been changed.
+                // This is the ideal place to perform your actions after the text has been changed.
+                val enteredText = editable.toString()
+                var convertedScore = enteredText.toDoubleOrNull() ?: 0.0
+                workout.score = convertedScore
+                // Do something with the entered text, e.g., update a variable, trigger some logic, etc.
+            }
+        })
     }
 
     override fun getItemCount() = workouts.size
