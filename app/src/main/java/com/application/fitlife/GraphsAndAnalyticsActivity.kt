@@ -6,13 +6,17 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.Spinner
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.application.fitlife.data.MyDatabaseHelper
 import com.jjoe64.graphview.GraphView
 import com.jjoe64.graphview.series.BarGraphSeries
 import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
-import com.application.fitlife.data.MyDatabaseHelper
+import com.application.fitlife.GraphSampleDataGenerator
+
 
 class GraphsAndAnalyticsActivity : AppCompatActivity() {
 
@@ -22,7 +26,10 @@ class GraphsAndAnalyticsActivity : AppCompatActivity() {
     private lateinit var weightButton: Button
     private lateinit var heartRateButton: Button
     private lateinit var respiratoryRateButton: Button
+    private var progressBar: ProgressBar? = null
+    private var progressText: TextView? = null
     private var currentAttribute = "score"
+    private var todaysDailyScore = 0;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +41,9 @@ class GraphsAndAnalyticsActivity : AppCompatActivity() {
         weightButton = findViewById(R.id.weightButton)
         heartRateButton = findViewById(R.id.heartRateButton)
         respiratoryRateButton = findViewById(R.id.respiratoryRateButton)
+        // set the id for the progressbar and progress text
+        progressBar = findViewById(R.id.progress_bar);
+        progressText = findViewById(R.id.progress_text);
 
         ArrayAdapter.createFromResource(
             this,
@@ -177,12 +187,25 @@ class GraphsAndAnalyticsActivity : AppCompatActivity() {
                 var respiratoryRateDataPoint = DataPoint(day.toDouble(), respiratoryRateValue.toDouble())
                 respiratoryRateDataArray.add(respiratoryRateDataPoint)
 
+                if (day == 1) {
+                    todaysDailyScore = scoreValue.toInt();
+                    if (todaysDailyScore == 0) {
+                        progressText?.text = "00"
+                    } else {
+                        progressText?.text = "" + todaysDailyScore
+                    }
+                    progressBar?.setProgress(todaysDailyScore)
+                    Log.d("todaysDailyScore" , todaysDailyScore.toString())
+                }
+
                 day += 1
 
                 // Continue iterating if there are more rows
 
-            } while (cursor.moveToNext())
+            } while (false)
         }
+
+        // while (cursor.moveToNext())
 
 //        val dataArray = mutableListOf<DataPoint>()
 //
@@ -221,6 +244,46 @@ class GraphsAndAnalyticsActivity : AppCompatActivity() {
 //
 //        dataPoint = DataPoint(11.0, 13.0)
 //        dataArray.add(dataPoint)
+
+        var graphSampleDataGeneratorClassObject = GraphSampleDataGenerator()
+
+        // getting random data for scores
+        val randomDailyScoresDataArray = graphSampleDataGeneratorClassObject.dailyScoresArrayData()
+        var day = 2
+        for (randomScoreValue in randomDailyScoresDataArray) {
+            var dataPoint = DataPoint(day.toDouble(), randomScoreValue.toDouble())
+            scoresDataArray.add(dataPoint)
+            day += 1
+        }
+
+        // getting random data for heart rates
+        val randomHeartRatesDataArray = graphSampleDataGeneratorClassObject.heartRatesArrayData()
+        day = 2
+        for (randomHeartRate in randomHeartRatesDataArray) {
+            var dataPoint = DataPoint(day.toDouble(), randomHeartRate.toDouble())
+            heartRateDataArray.add(dataPoint)
+            day += 1
+        }
+
+        // getting random data for respiratory rates
+        val randomRespiratoryRatesDataArray = graphSampleDataGeneratorClassObject.respiratoryRatesArrayData()
+        day = 2
+        for (randomRespiratoryRate in randomRespiratoryRatesDataArray) {
+            var dataPoint = DataPoint(day.toDouble(), randomRespiratoryRate.toDouble())
+            respiratoryRateDataArray.add(dataPoint)
+            day += 1
+        }
+
+        // getting random data for respiratory rates
+        val randomWeightDataArray = graphSampleDataGeneratorClassObject.userWeightArrayData()
+        day = 2
+        for (randomWeight in randomWeightDataArray) {
+            var dataPoint = DataPoint(day.toDouble(), randomWeight.toDouble())
+            weightDataArray.add(dataPoint)
+            day += 1
+        }
+
+
 
         if (metric == "score") {
             return scoresDataArray.toTypedArray()
