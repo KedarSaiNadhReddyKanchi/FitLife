@@ -9,5 +9,6 @@ data class Workout(
     val equipment: String,
     val level: String,
     val rating: String,
-    val ratingDesc: String
+    val ratingDesc: String,
+    var isSelected: Boolean = false
 )

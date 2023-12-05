@@ -161,6 +161,13 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        val startExerciseButton = findViewById<Button>(R.id.startExercise)
+        startExerciseButton.setOnClickListener {
+            val intent = Intent(this@MainActivity, ShowExercise::class.java)
+            intent.putExtra("unique_id", uniqueId)
+            startActivity(intent)
+        }
+
     }
 
     fun insertOrUpdateDatabaseEntry(dbHelper: MyDatabaseHelper, uniqueDate: String, heart_rate: String, respiratory_rate: String, age: String, weight: String, height: String) {

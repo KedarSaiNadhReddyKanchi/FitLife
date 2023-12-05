@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:text="Selected Muscle Groups: None"
         android:padding="16dp"
-        android:textSize="26sp" />
+        android:textSize="16sp" />
 
     <Button
         android:id="@+id/selectExerciseTypeButton"
@@ -47,13 +47,14 @@
         android:layout_height="wrap_content"
         android:text="Selected Exercise Types: None"
         android:padding="16dp"
-        android:textSize="26sp" />
+        android:textSize="16sp" />
 
     <Button
         android:id="@+id/showExercisesButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Suggest Exercises" />
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/exercisesList"
