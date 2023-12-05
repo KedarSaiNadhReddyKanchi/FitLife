@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.application.fitlife.FuzzyLogicControllerWorkoutSuggestions.Companion.suggestWorkouts
 import com.application.fitlife.data.MyDatabaseHelper
 import com.application.fitlife.data.Workout
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
     companion object {
@@ -88,13 +90,9 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
             val exerciseTypeSelections = exerciseTypes.filterIndexed { index, _ ->
                 selectedExerciseTypes?.get(index) == true
             }
-            //Toast.makeText(this, "Selected Exercises: $exerciseTypeSelections", Toast.LENGTH_LONG).show()
-            val userMetrics = mapOf(
-                USER_HEIGHT to "180",  // Replace with actual user height
-                USER_WEIGHT to "75",   // Replace with actual user weight
-                USER_HEART_RATE to "70",  // Replace with actual user heart rate
-                USER_RESPIRATORY_RATE to "16"  // Replace with actual user respiratory rate
-            )
+
+            val userMetrics = MyDatabaseHelper.getUserMetrics(db, LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")))
 
             val suggestedWorkoutIds = suggestWorkouts(
                 db,
@@ -251,7 +249,10 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
     }
 
     private fun updateSuggestionScore(db: android.database.sqlite.SQLiteDatabase) {
-        //suggestWorkouts(db: SQLiteDatabase, muscleGroups: List<String>, workoutTypes: List<String>, userMetrics: Map<String, String>, sessionId: String): List<Long>
+        // If workouts are not yet suggested, nothing to update
+        if (!::workoutAdapter.isInitialized) {
+            return
+        }
         // profile the user metrics and rate the user
         val selectedExercises = workoutAdapter.workouts
             .filter { it.isSelected }
@@ -266,7 +267,8 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
                         ${MyDatabaseHelper.COLUMN_NAME_SCORE} = ${selectedWorkout.score}
                         WHERE ${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID} = ${selectedWorkout.suggestionId}
                     """
-                db.rawQuery(updateScoreQuery, null)
+                val cursor = db.rawQuery(updateScoreQuery, null)
+                cursor.close()
             }
         }
         ScoringEngine.calculateScore(db)

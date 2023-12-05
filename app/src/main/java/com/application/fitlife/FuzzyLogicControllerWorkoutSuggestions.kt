@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import com.application.fitlife.data.Workout
 import com.application.fitlife.data.MyDatabaseHelper
+import com.application.fitlife.data.UserMetrics
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
@@ -14,33 +15,20 @@ class FuzzyLogicControllerWorkoutSuggestions {
 
     companion object {
 
-        const val USER_HEIGHT = "height"
-        const val USER_WEIGHT = "weight"
-        const val USER_HEART_RATE = "heartRate"
-        const val USER_RESPIRATORY_RATE = "respiratoryRate"
-
         // Format a Date object to a String using the specified pattern
-        fun suggestWorkouts(db: SQLiteDatabase, muscleGroups: List<String>, workoutTypes: List<String>, userMetrics: Map<String, String>, sessionId: String): List<Long> {
+        fun suggestWorkouts(db: SQLiteDatabase, muscleGroups: List<String>, workoutTypes: List<String>, userMetrics: UserMetrics, sessionId: String): List<Long> {
             // profile the user metrics and rate the user
             // Calculate user BMI
             var userBMI = 23.5
-            if (userMetrics.containsKey(USER_HEIGHT) && userMetrics.containsKey(USER_WEIGHT)) {
-                userBMI = calculateBMI(
-                    userMetrics.getOrDefault(USER_HEIGHT, "0").toDouble(), userMetrics.getOrDefault(
-                        USER_WEIGHT, "0"
-                    ).toDouble()
-                )
-            }
+            userBMI = calculateBMI(userMetrics.height, userMetrics.weight)
             val bmiRating = calculateBMIRating(userBMI, 18.5, 29.9)
             val heartRateRating = calculateHeartRateRating(
-                userMetrics.getOrDefault(USER_HEART_RATE, "0").toDouble(),
+                userMetrics.heartRate,
                 60.0,
                 100.0
             )
             val respiratoryRateRating = calculateRespiratoryRateRating(
-                userMetrics.getOrDefault(
-                    USER_RESPIRATORY_RATE, "0"
-                ).toDouble(), 12.0, 20.0
+                userMetrics.respiratoryRate, 12.0, 20.0
             )
 
             val bmiWeight = 0.4

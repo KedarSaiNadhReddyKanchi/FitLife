@@ -45,6 +45,40 @@ class MyDatabaseHelper(private val context: Context) : SQLiteOpenHelper(context,
         const val COLUMN_NAME_USER_ID = "user_id"
         const val COLUMN_NAME_AGE = "age"
         const val COLUMN_NAME_USERNAME = "user_name"
+
+        fun getUserMetrics(db: SQLiteDatabase, targetDate: String): UserMetrics {
+            val query = """
+                        SELECT *
+                        FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} 
+                        WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE} = '$targetDate'
+                    """.trimIndent()
+
+            val cursor = db.rawQuery(query, null)
+
+            val userMetrics = UserMetrics(
+                id = 0,
+                height = 0.0,
+                weight = 0.0,
+                score = 0.0,
+                heartRate = 0.0,
+                respiratoryRate = 0.0
+            )
+
+            while (cursor.moveToNext()) {
+                val userMetrics = UserMetrics(
+                    id = cursor.getLong(0),
+                    height = cursor.getDouble(1),
+                    weight = cursor.getDouble(2),
+                    score = cursor.getDouble(3),
+                    heartRate = cursor.getDouble(4),
+                    respiratoryRate = cursor.getDouble(5)
+                )
+            }
+
+            cursor.close()
+
+            return userMetrics
+        }
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
