@@ -1,4 +1,4 @@
-package com.application.bhealthy.data
+package com.application.fitlife.data
 
 data class WorkoutSuggestion(
     val id: Long,
