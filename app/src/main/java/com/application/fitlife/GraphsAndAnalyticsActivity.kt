@@ -17,7 +17,6 @@ import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
 import com.application.fitlife.GraphSampleDataGenerator
 
-
 class GraphsAndAnalyticsActivity : AppCompatActivity() {
 
     private lateinit var spinner: Spinner
