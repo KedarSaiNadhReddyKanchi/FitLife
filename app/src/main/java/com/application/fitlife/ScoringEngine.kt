@@ -4,6 +4,7 @@ import kotlin.math.abs
 import com.application.fitlife.data.MyDatabaseHelper
 import com.application.fitlife.data.WorkoutSuggestion
 import android.database.sqlite.SQLiteDatabase
+import com.application.fitlife.data.UserMetrics
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -15,33 +16,21 @@ class ScoringEngine {
         const val USER_HEART_RATE = "heartRate"
         const val USER_RESPIRATORY_RATE = "respiratoryRate"
 
-        fun calculateScore(db: SQLiteDatabase, userMetrics: Map<String, String>): Double{
+        fun calculateScore(db: SQLiteDatabase): Double{
             var userBMI = 23.5
-            if (userMetrics.containsKey(ScoringEngine.USER_HEIGHT) && userMetrics.containsKey(
-                    ScoringEngine.USER_WEIGHT
-                )) {
+            var userMetrics = getUserMetrics(db, LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 userBMI = ScoringEngine.calculateBMI(
-                    userMetrics.getOrDefault(
-                        ScoringEngine.USER_HEIGHT,
-                        "0"
-                    ).toDouble(), userMetrics.getOrDefault(
-                        ScoringEngine.USER_WEIGHT, "0"
-                    ).toDouble()
+                    userMetrics.height, userMetrics.weight
                 )
-            }
             val bmiRating =
                 ScoringEngine.calculateBMIRating(userBMI, 18.5, 29.9)
             val heartRateRating = ScoringEngine.calculateHeartRateRating(
-                userMetrics.getOrDefault(
-                    ScoringEngine.USER_HEART_RATE,
-                    "0"
-                ).toDouble(), 60.0, 100.0
+                userMetrics.heartRate, 60.0, 100.0
             )
             val respiratoryRateRating =
                 ScoringEngine.calculateRespiratoryRateRating(
-                    userMetrics.getOrDefault(
-                        ScoringEngine.USER_RESPIRATORY_RATE, "0"
-                    ).toDouble(), 12.0, 20.0
+                    userMetrics.respiratoryRate, 12.0, 20.0
                 )
             val bmiWeight = 0.2
             val heartRateWeight = 0.4
@@ -96,6 +85,40 @@ class ScoringEngine {
             cursor.close()
 
             return workoutSuggestions
+        }
+
+        private fun getUserMetrics(db: SQLiteDatabase, targetDate: String): UserMetrics {
+            val query = """
+                        SELECT *
+                        FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} 
+                        WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE} = '$targetDate'
+                    """.trimIndent()
+
+            val cursor = db.rawQuery(query, null)
+
+            val userMetrics = UserMetrics(
+                id = 0,
+                height = 0.0,
+                weight = 0.0,
+                score = 0.0,
+                heartRate = 0.0,
+                respiratoryRate = 0.0
+            )
+
+            while (cursor.moveToNext()) {
+                val userMetrics = UserMetrics(
+                    id = cursor.getLong(0),
+                    height = cursor.getDouble(1),
+                    weight = cursor.getDouble(2),
+                    score = cursor.getDouble(3),
+                    heartRate = cursor.getDouble(4),
+                    respiratoryRate = cursor.getDouble(5)
+                )
+            }
+
+            cursor.close()
+
+            return userMetrics
         }
 
         private fun calculateBMI(height: Double, weight: Double): Double {
