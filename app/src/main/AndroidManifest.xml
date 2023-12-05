@@ -44,6 +44,8 @@
 
             <!-- Other activity attributes and intent filters go here -->
         </activity>
+
+        <activity android:name=".ShowExercise" android:exported="false" />
     </application>
 
 </manifest>
