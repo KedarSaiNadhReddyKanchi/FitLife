@@ -1,6 +1,2 @@
 "# FitLife" 
 
-In today's fast-paced world, maintaining a healthy lifestyle can be challenging. FitLife, our wellness app, addresses this by offering a novel daily score system. Users actively manage their health using this system, aiming for a score of 75 or higher, evaluated through a mix of user metrics and machine learning. The app incorporates crucial parameters like heart rate, daily steps, and adherence to instructions. FitLife empowers users with personalized workouts, dietary control, and machine learning-generated daily scores, fostering motivation for healthier choices. This innovative approach combines data-driven decision-making, motivation, and personalization, providing a dynamic platform for proactive well-being and exercise.
-
-To Execute:
-Collaborating with my team members, I integrate with their activities to initialize database tables. My concurrent work resides within their branch to facilitate database queries and updates. However, I encountered a challenge in incorporating individual standalone queries seamlessly into my code. I am currently exploring solutions to efficiently integrate these queries and enhance the overall cohesion of the codebase. It is still not possible to just execute my code. The dependency on other branches. 
