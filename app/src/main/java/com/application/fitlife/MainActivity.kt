@@ -178,17 +178,18 @@ class MainActivity : AppCompatActivity() {
         val db = dbHelper.writableDatabase
 
         // Check if the entry with the given vitals_id exists
-        Log.d("uniqueDate", uniqueDate)
-        val cursor = db.rawQuery("SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE}=?", arrayOf(uniqueDate))
+        val generatedUniqueDateFromFunction = generateUniqueDate()
+        Log.d("generatedUniqueDateFromFunction", generatedUniqueDateFromFunction)
+        val cursor = db.rawQuery("SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE}=?", arrayOf(generatedUniqueDateFromFunction))
         val values = ContentValues()
 
         if (heart_rate == "") {
-            values.put("heart_rate", "0")
+            values.put("heart_rate", "72")
         } else {
             values.put("heart_rate", heart_rate)
         }
         if (respiratory_rate == "") {
-            values.put("respiratory_rate", "0")
+            values.put("respiratory_rate", "15")
         } else {
             values.put("respiratory_rate", respiratory_rate)
         }
@@ -208,7 +209,7 @@ class MainActivity : AppCompatActivity() {
 //        values.put("weight", weight.toFloatOrNull() ?: 0.0f)
 //        values.put("height", height.toFloatOrNull() ?: 0.0f)
 
-        Log.d("insertOrUpdateDatabaseEntry", "Primary Key Date = $uniqueDate heart_rate: $heart_rate, respiratory_rate: $respiratory_rate, weight: $weight, height: $height")
+        Log.d("insertOrUpdateDatabaseEntry", "Primary Key Date = $generatedUniqueDateFromFunction heart_rate: $heart_rate, respiratory_rate: $respiratory_rate, weight: $weight, height: $height")
 
         if (cursor.count > 0) {
             // Entry with the vitals_id already exists, update it
@@ -216,11 +217,11 @@ class MainActivity : AppCompatActivity() {
                 MyDatabaseHelper.TABLE_NAME_USER_METRICS,
                 values,
                 "${MyDatabaseHelper.COLUMN_NAME_DATE}=?",
-                arrayOf(uniqueDate)
+                arrayOf(generatedUniqueDateFromFunction)
             )
             Toast.makeText(baseContext, "Entry with today's date already exists therefore the corresponding row has been updated", Toast.LENGTH_LONG).show()
         } else {
-            values.put("date", uniqueDate)
+            values.put("date", generatedUniqueDateFromFunction)
             // Entry with the vitals_id doesn't exist, insert a new record
             db.insert(MyDatabaseHelper.TABLE_NAME_USER_METRICS, null, values)
             Toast.makeText(baseContext, "Entry with today's date doesn't exist therefore inserted a new record", Toast.LENGTH_LONG).show()
@@ -230,13 +231,18 @@ class MainActivity : AppCompatActivity() {
         db.close()
     }
 
-    fun generateUniqueId(): String {
+    private fun generateUniqueId(): String {
         // Get current timestamp in milliseconds
         val timestamp = System.currentTimeMillis()
 
         // Generate a random UUID
         val randomUUID = UUID.randomUUID()
 
+        // Combine the timestamp and randomUUID to create a unique ID
+        return "$timestamp-${randomUUID.toString()}"
+    }
+
+    private fun generateUniqueDate(): String {
         val currentDate = LocalDate.now(ZoneId.systemDefault())
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         var formattedDate = currentDate.format(formatter)
