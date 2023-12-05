@@ -2,7 +2,7 @@ package com.application.fitlife
 
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
-import com.application.bhealthy.data.Workout
+import com.application.fitlife.data.Workout
 import com.application.fitlife.data.MyDatabaseHelper
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
