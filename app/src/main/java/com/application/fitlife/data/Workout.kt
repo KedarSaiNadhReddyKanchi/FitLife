@@ -10,5 +10,7 @@ data class Workout(
     val level: String,
     val rating: String,
     val ratingDesc: String,
-    var isSelected: Boolean = false
+    var isSelected: Boolean = false,
+    var suggestionId: Long = 0,
+    var score: Double = 0.0
 )

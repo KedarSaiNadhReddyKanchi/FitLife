@@ -1,6 +1,7 @@
 package com.application.fitlife
 
 import android.app.AlertDialog
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -18,6 +19,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.application.fitlife.FuzzyLogicControllerWorkoutSuggestions.Companion.suggestWorkouts
 import com.application.fitlife.data.MyDatabaseHelper
 import com.application.fitlife.data.Workout
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
     companion object {
@@ -48,6 +51,7 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_show_exercise)
+        val sessionId = intent.getStringExtra(getString(R.string.unique_id))?: "default_value"
 
         selectMuscleGroupsButton = findViewById(R.id.selectMuscleGroupsButton)
         showExercisesButton = findViewById(R.id.showExercisesButton)
@@ -74,6 +78,9 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
             showMuscleGroupDialog()
         }
 
+        val dbHelper = MyDatabaseHelper(this)
+        val db = dbHelper.writableDatabase
+
         showExercisesButton.setOnClickListener {
             //displaySelectedExercises()
             val muscleGroupSelections = muscleGroups.filterIndexed { index, _ ->
@@ -83,16 +90,10 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
             val exerciseTypeSelections = exerciseTypes.filterIndexed { index, _ ->
                 selectedExerciseTypes?.get(index) == true
             }
-            //Toast.makeText(this, "Selected Exercises: $exerciseTypeSelections", Toast.LENGTH_LONG).show()
-            val userMetrics = mapOf(
-                USER_HEIGHT to "180",  // Replace with actual user height
-                USER_WEIGHT to "75",   // Replace with actual user weight
-                USER_HEART_RATE to "70",  // Replace with actual user heart rate
-                USER_RESPIRATORY_RATE to "16"  // Replace with actual user respiratory rate
-            )
-            val dbHelper = MyDatabaseHelper(this)
-            val db = dbHelper.writableDatabase
-            val sessionId = "session1"
+
+            val userMetrics = MyDatabaseHelper.getUserMetrics(db, LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+
             val suggestedWorkoutIds = suggestWorkouts(
                 db,
                 muscleGroupSelections,
@@ -116,9 +117,8 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         }
 
         submitButton.setOnClickListener {
-            showSelectedExercises()
-
-            // Added code
+            updateSuggestionScore(db)
+            //updateExerciseScore()
 
         }
 
@@ -145,19 +145,14 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         //Toast.makeText(this, "Workout ID list length: ${workoutIdList.length}", Toast.LENGTH_SHORT).show()
         Log.d("workoutId", workoutIdList)
         Toast.makeText(this, "All the Ids: $workoutIdList", Toast.LENGTH_SHORT).show()
+
         // SQL query to retrieve exercises
-
         val query = """
-        SELECT wi.*
-        FROM ${MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS} ws
-        JOIN ${MyDatabaseHelper.TABLE_NAME_WORKOUTS_INFORMATION} wi ON  wi.${MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID} = ws.${MyDatabaseHelper.COLUMN_NAME_EXERCISE_ID}
-        WHERE ws.${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID} IN ($workoutIdList)
-    """
-
-//        val query = """
-//        SELECT * FROM ${MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS}
-//        WHERE ${MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID} IN ($workoutIdList)
-//    """.trimIndent()
+            SELECT wi.*, ws.${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID}, ws.${MyDatabaseHelper.COLUMN_NAME_SCORE}
+            FROM ${MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS} ws
+            JOIN ${MyDatabaseHelper.TABLE_NAME_WORKOUTS_INFORMATION} wi ON  wi.${MyDatabaseHelper.COLUMN_NAME_WORKOUT_ID} = ws.${MyDatabaseHelper.COLUMN_NAME_EXERCISE_ID}
+            WHERE ws.${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID} IN ($workoutIdList)
+        """
 
         Log.d("SQLQuery", query)
         Toast.makeText(this, "All the query: $query", Toast.LENGTH_SHORT).show()
@@ -174,7 +169,9 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
                     equipment = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_EQUIPMENT)),
                     level = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_LEVEL)),
                     rating = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_RATING)),
-                    ratingDesc = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_RATING_DESC))
+                    ratingDesc = cursor.getString(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_RATING_DESC)),
+                    score = cursor.getDouble(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_SCORE)),
+                    suggestionId = cursor.getLong(cursor.getColumnIndexOrThrow(MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID))
                 )
                 workouts.add(workout)
             }
@@ -239,6 +236,7 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
         exercisesAdapter.exercises = selectedExercises
         exercisesAdapter.notifyDataSetChanged()
     }
+
     private fun prepareSelectedExercises() {
         selectedExercises.clear()
         muscleGroups.forEachIndexed { index, muscleGroup ->
@@ -249,17 +247,31 @@ class ShowExercise<SQLiteDatabase> : AppCompatActivity() {
             }
         }
     }
-    private fun showSelectedExercises() {
-        //suggestWorkouts(db: SQLiteDatabase, muscleGroups: List<String>, workoutTypes: List<String>, userMetrics: Map<String, String>, sessionId: String): List<Long>
-        // profile the user metrics and rate the user
-        val selectedExercises = workoutAdapter.workouts.filter { it.isSelected }
-            .joinToString(separator = ", ") { it.title }
 
-        if (selectedExercises.isEmpty()) {
-            Toast.makeText(this, "No exercises selected", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Selected Exercises: $selectedExercises", Toast.LENGTH_LONG).show()
+    private fun updateSuggestionScore(db: android.database.sqlite.SQLiteDatabase) {
+        // If workouts are not yet suggested, nothing to update
+        if (!::workoutAdapter.isInitialized) {
+            return
         }
+        // profile the user metrics and rate the user
+        val selectedExercises = workoutAdapter.workouts
+            .filter { it.isSelected }
+            .map { it.id }
+
+        // Iterate through selected exercises and update the score in the original list
+        for (suggestionId in selectedExercises) {
+            val selectedWorkout = workoutAdapter.workouts.find { it.id == suggestionId }
+            selectedWorkout?.let {
+                val updateScoreQuery = """
+                        UPDATE ${MyDatabaseHelper.TABLE_NAME_WORKOUT_SUGGESTIONS} SET 
+                        ${MyDatabaseHelper.COLUMN_NAME_SCORE} = ${selectedWorkout.score}
+                        WHERE ${MyDatabaseHelper.COLUMN_NAME_SUGGESTION_ID} = ${selectedWorkout.suggestionId}
+                    """
+                val cursor = db.rawQuery(updateScoreQuery, null)
+                cursor.close()
+            }
+        }
+        ScoringEngine.calculateScore(db)
     }
 
 //    private fun setupSpinner() {

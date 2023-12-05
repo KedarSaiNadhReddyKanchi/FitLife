@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity() {
     // maintaining a unique ID to acts a primary key reference for the database table.
     // for this project we are using the current date as the primary key as we are interested in only maintaining one row per day.
     // so any new data coming into the table for the current date which is already present in the table, then the code logic would only update the table instead of inserting a new row.
-    private val uniqueIdKey = "unique_id"
     private lateinit var sharedPreferences: SharedPreferences
 
     // camera implementation pre requisites
@@ -71,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
         // Store the unique ID in SharedPreferences
         val editor = sharedPreferences.edit()
-        editor.putString(uniqueIdKey, uniqueId)
+        editor.putString(getString(R.string.unique_id), uniqueId)
         editor.apply()
 
         // accessing the heart Rate UI element and setting the TextView to be disabled so that the user cannot edit it.
@@ -102,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         val measureHeartRateButton = findViewById<Button>(R.id.heartRate)
         measureHeartRateButton.setOnClickListener {
             val intent = Intent(this@MainActivity, CameraActivity::class.java)
-            intent.putExtra("unique_id", uniqueId)
+            intent.putExtra(getString(R.string.unique_id), uniqueId)
             startActivityForResult(intent, CAMERA_ACTIVITY_REQUEST_CODE)
         }
 
@@ -157,14 +156,14 @@ class MainActivity : AppCompatActivity() {
         val recentAnalyticsButton = findViewById<Button>(R.id.recentAnalytics)
         recentAnalyticsButton.setOnClickListener {
             val intent = Intent(this@MainActivity, GraphsAndAnalyticsActivity::class.java)
-            intent.putExtra("unique_id", uniqueId)
+            intent.putExtra(getString(R.string.unique_id), uniqueId)
             startActivity(intent)
         }
 
         val startExerciseButton = findViewById<Button>(R.id.startExercise)
         startExerciseButton.setOnClickListener {
             val intent = Intent(this@MainActivity, ShowExercise::class.java)
-            intent.putExtra("unique_id", uniqueId)
+            intent.putExtra(getString(R.string.unique_id), uniqueId)
             startActivity(intent)
         }
 

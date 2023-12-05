@@ -6,6 +6,7 @@
     <string name="weight">Weight</string>
     <string name="hr">HR</string>
     <string name="rr">RR</string>
+    <string name="unique_id">unique_id</string>
     <string-array name="graph_types">
         <item>Line Graph</item>
         <item>Bar Graph</item>

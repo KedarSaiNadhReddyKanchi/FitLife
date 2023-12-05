@@ -18,7 +18,7 @@ class ScoringEngine {
 
         fun calculateScore(db: SQLiteDatabase): Double{
             var userBMI = 23.5
-            var userMetrics = getUserMetrics(db, LocalDate.now().format(
+            var userMetrics = MyDatabaseHelper.getUserMetrics(db, LocalDate.now().format(
                 DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 userBMI = ScoringEngine.calculateBMI(
                     userMetrics.height, userMetrics.weight
@@ -85,40 +85,6 @@ class ScoringEngine {
             cursor.close()
 
             return workoutSuggestions
-        }
-
-        private fun getUserMetrics(db: SQLiteDatabase, targetDate: String): UserMetrics {
-            val query = """
-                        SELECT *
-                        FROM ${MyDatabaseHelper.TABLE_NAME_USER_METRICS} 
-                        WHERE ${MyDatabaseHelper.COLUMN_NAME_DATE} = '$targetDate'
-                    """.trimIndent()
-
-            val cursor = db.rawQuery(query, null)
-
-            val userMetrics = UserMetrics(
-                id = 0,
-                height = 0.0,
-                weight = 0.0,
-                score = 0.0,
-                heartRate = 0.0,
-                respiratoryRate = 0.0
-            )
-
-            while (cursor.moveToNext()) {
-                val userMetrics = UserMetrics(
-                    id = cursor.getLong(0),
-                    height = cursor.getDouble(1),
-                    weight = cursor.getDouble(2),
-                    score = cursor.getDouble(3),
-                    heartRate = cursor.getDouble(4),
-                    respiratoryRate = cursor.getDouble(5)
-                )
-            }
-
-            cursor.close()
-
-            return userMetrics
         }
 
         private fun calculateBMI(height: Double, weight: Double): Double {
